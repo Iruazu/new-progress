@@ -236,4 +236,34 @@ export function ProjectDetailPage({
                   <thead className="bg-[#2c2c2c]">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Size</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#333]">
+                    {files.map(file => (
+                      <tr key={file.id} className="hover:bg-[#2a2a2a]">
+                        <td className="px-6 py-4 text-sm">{file.name}</td>
+                        <td className="px-6 py-4 text-sm text-[#999]">{file.type}</td>
+                        <td className="px-6 py-4 text-sm text-[#999]">{file.size}</td>
+                        <td className="px-6 py-4 text-sm text-[#999]">{file.date}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex space-x-2">
+                            <button className="text-[#999] hover:text-white">View</button>
+                            <button className="text-[#999] hover:text-white">Download</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
