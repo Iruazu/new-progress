@@ -1,15 +1,13 @@
 'use client'
 
 import { ReactNode, useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import { TodoList } from './TodoList'
+import { Project } from '@/app/page'
+import { ProjectIcon } from './ProjectIcons'
 
 interface ProjectDetailPageProps {
-  title: string
-  description: string
-  progress: number
-  progressColor: 'coral' | 'yellow'
-  icon: ReactNode
+  project: Project
   onClose: () => void
   initialTab: 'todo' | 'notes' | 'files' | null
 }
@@ -30,18 +28,16 @@ interface FileItem {
 }
 
 export function ProjectDetailPage({
-  title,
-  description,
-  progress,
-  progressColor,
-  icon,
+  project,
   onClose,
   initialTab
 }: ProjectDetailPageProps) {
+  const { title, description, progress, progressColor, iconType } = project
   const [activeTab, setActiveTab] = useState<'todo' | 'notes' | 'files' | null>(initialTab)
+  const icon = <ProjectIcon type={iconType} />
   
-  // Sample notes and files data
-  const [notes] = useState<NoteItem[]>([
+  // Note state and handlers
+  const [notes, setNotes] = useState<NoteItem[]>([
     {
       id: 1,
       title: 'Lighting Research',
@@ -55,8 +51,11 @@ export function ProjectDetailPage({
       date: '2025-04-15'
     }
   ])
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [noteForm, setNoteForm] = useState({ title: '', content: '' })
   
-  const [files] = useState<FileItem[]>([
+  // File state and handlers
+  const [files, setFiles] = useState<FileItem[]>([
     {
       id: 1,
       name: 'project_requirements.pdf',
@@ -79,6 +78,53 @@ export function ProjectDetailPage({
       date: '2025-04-18'
     }
   ])
+  const [showFileModal, setShowFileModal] = useState(false)
+  const [fileForm, setFileForm] = useState({ name: '', type: 'Document', size: '' })
+  
+  const handleNoteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setNoteForm({ ...noteForm, [name]: value })
+  }
+  
+  const handleAddNote = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newNote: NoteItem = {
+      id: Date.now(),
+      title: noteForm.title,
+      content: noteForm.content,
+      date: new Date().toISOString().split('T')[0]
+    }
+    setNotes([...notes, newNote])
+    setNoteForm({ title: '', content: '' })
+    setShowNoteModal(false)
+  }
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFileForm({ ...fileForm, [name]: value })
+  }
+  
+  const handleAddFile = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newFile: FileItem = {
+      id: Date.now(),
+      name: fileForm.name,
+      type: fileForm.type,
+      size: fileForm.size || '0 KB',
+      date: new Date().toISOString().split('T')[0]
+    }
+    setFiles([...files, newFile])
+    setFileForm({ name: '', type: 'Document', size: '' })
+    setShowFileModal(false)
+  }
+  
+  const handleDeleteNote = (id: number) => {
+    setNotes(notes.filter(note => note.id !== id))
+  }
+  
+  const handleDeleteFile = (id: number) => {
+    setFiles(files.filter(file => file.id !== id))
+  }
 
   return (
     <div className="fixed inset-0 bg-[#1a1a1a] z-50 overflow-auto">
@@ -189,6 +235,20 @@ export function ProjectDetailPage({
                       <p className="text-sm">Progress updated to {progress}%</p>
                       <p className="text-[#999] text-sm ml-auto">April 21, 2025</p>
                     </div>
+                    {notes.length > 0 && (
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-[#f8a387] rounded-full mr-3"></div>
+                        <p className="text-sm">Added note: {notes[notes.length - 1].title}</p>
+                        <p className="text-[#999] text-sm ml-auto">{notes[notes.length - 1].date}</p>
+                      </div>
+                    )}
+                    {files.length > 0 && (
+                      <div className="flex items-center">
+                        <div className="w-2 h-2 bg-[#f8a387] rounded-full mr-3"></div>
+                        <p className="text-sm">Added file: {files[files.length - 1].name}</p>
+                        <p className="text-[#999] text-sm ml-auto">{files[files.length - 1].date}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -198,72 +258,4 @@ export function ProjectDetailPage({
           {activeTab === 'todo' && (
             <div className="todo-content">
               <TodoList />
-            </div>
-          )}
-          
-          {activeTab === 'notes' && (
-            <div className="notes-content">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">Notes</h3>
-                <button className="px-4 py-2 bg-transparent border border-[#444] rounded-md hover:bg-[#2a2a2a] text-sm">
-                  + Add Note
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {notes.map(note => (
-                  <div key={note.id} className="bg-[#252525] p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">{note.title}</h4>
-                    <p className="text-[#999] text-sm mb-4">{note.content}</p>
-                    <div className="text-xs text-[#777]">{note.date}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'files' && (
-            <div className="files-content">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">Files</h3>
-                <button className="px-4 py-2 bg-transparent border border-[#444] rounded-md hover:bg-[#2a2a2a] text-sm">
-                  + Upload File
-                </button>
-              </div>
-              
-              <div className="bg-[#252525] rounded-lg overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-[#2c2c2c]">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Size</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-[#999] uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#333]">
-                    {files.map(file => (
-                      <tr key={file.id} className="hover:bg-[#2a2a2a]">
-                        <td className="px-6 py-4 text-sm">{file.name}</td>
-                        <td className="px-6 py-4 text-sm text-[#999]">{file.type}</td>
-                        <td className="px-6 py-4 text-sm text-[#999]">{file.size}</td>
-                        <td className="px-6 py-4 text-sm text-[#999]">{file.date}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex space-x-2">
-                            <button className="text-[#999] hover:text-white">View</button>
-                            <button className="text-[#999] hover:text-white">Download</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+            </div
