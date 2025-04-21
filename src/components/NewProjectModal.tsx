@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { Project } from '@/app/page'
 
 interface NewProjectModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (projectData: NewProjectData) => void
+  editProject: Project | null
 }
 
 export interface NewProjectData {
@@ -18,7 +20,7 @@ export interface NewProjectData {
   actions: string[]
 }
 
-export function NewProjectModal({ isOpen, onClose, onSave }: NewProjectModalProps) {
+export function NewProjectModal({ isOpen, onClose, onSave, editProject }: NewProjectModalProps) {
   const [formData, setFormData] = useState<NewProjectData>({
     title: '',
     description: '',
@@ -27,6 +29,26 @@ export function NewProjectModal({ isOpen, onClose, onSave }: NewProjectModalProp
     iconType: 'desktop',
     actions: ['OPEN', 'DETAILS']
   })
+
+  useEffect(() => {
+    if (editProject) {
+      // Filter out EDIT and DELETE from actions since we'll add them automatically later
+      const basicActions = editProject.actions.filter(action => 
+        action !== 'EDIT' && action !== 'DELETE'
+      )
+      
+      setFormData({
+        title: editProject.title,
+        description: editProject.description,
+        progress: editProject.progress,
+        progressColor: editProject.progressColor,
+        iconType: editProject.iconType,
+        actions: basicActions
+      })
+    } else {
+      resetForm()
+    }
+  }, [editProject, isOpen])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -79,7 +101,9 @@ export function NewProjectModal({ isOpen, onClose, onSave }: NewProjectModalProp
           <X size={20} />
         </button>
         
-        <h2 className="text-xl font-semibold mb-4">Create New Project</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          {editProject ? 'Edit Project' : 'Create New Project'}
+        </h2>
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -173,6 +197,9 @@ export function NewProjectModal({ isOpen, onClose, onSave }: NewProjectModalProp
               className="w-full p-2 bg-[#2c2c2c] border border-[#444] rounded-md text-white"
               placeholder="OPEN, DETAILS"
             />
+            <p className="text-[#999] text-xs mt-1">
+              EDIT and DELETE actions will be added automatically
+            </p>
           </div>
           
           <div className="flex justify-end space-x-3">
@@ -187,7 +214,7 @@ export function NewProjectModal({ isOpen, onClose, onSave }: NewProjectModalProp
               type="submit"
               className="px-4 py-2 bg-[#f8a387] text-[#1a1a1a] font-medium rounded-md hover:opacity-90"
             >
-              Create Project
+              {editProject ? 'Save Changes' : 'Create Project'}
             </button>
           </div>
         </form>

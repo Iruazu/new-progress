@@ -7,7 +7,7 @@ import { NewProjectModal, NewProjectData } from '@/components/NewProjectModal'
 import { ProjectIcon, IconType } from '@/components/ProjectIcons'
 
 // Define project type to use throughout the application
-interface Project {
+export interface Project {
   id: string
   title: string
   description: string
@@ -19,6 +19,7 @@ interface Project {
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([
     {
       id: '1',
@@ -27,7 +28,7 @@ export default function Home() {
       progress: 65,
       progressColor: 'coral',
       iconType: 'desktop',
-      actions: ['OPEN', 'DETAILS']
+      actions: ['OPEN', 'DETAILS', 'EDIT', 'DELETE']
     },
     {
       id: '2',
@@ -36,7 +37,7 @@ export default function Home() {
       progress: 40,
       progressColor: 'yellow',
       iconType: 'table',
-      actions: ['OPEN', 'DETAILS']
+      actions: ['OPEN', 'DETAILS', 'EDIT', 'DELETE']
     },
     {
       id: '3',
@@ -45,7 +46,7 @@ export default function Home() {
       progress: 80,
       progressColor: 'coral',
       iconType: 'circle',
-      actions: ['OPEN', 'DETAILS']
+      actions: ['OPEN', 'DETAILS', 'EDIT', 'DELETE']
     },
     {
       id: '4',
@@ -54,7 +55,7 @@ export default function Home() {
       progress: 25,
       progressColor: 'yellow',
       iconType: 'grid',
-      actions: ['TODO']
+      actions: ['TODO', 'EDIT', 'DELETE']
     },
     {
       id: '5',
@@ -63,7 +64,7 @@ export default function Home() {
       progress: 50,
       progressColor: 'yellow',
       iconType: 'timer',
-      actions: ['NOTES']
+      actions: ['NOTES', 'EDIT', 'DELETE']
     },
     {
       id: '6',
@@ -72,25 +73,46 @@ export default function Home() {
       progress: 15,
       progressColor: 'coral',
       iconType: 'leaf',
-      actions: ['FILES']
+      actions: ['FILES', 'EDIT', 'DELETE']
     }
   ])
 
-  const handleOpenModal = () => {
+  const handleOpenModal = (project?: Project) => {
+    if (project) {
+      setEditingProject(project)
+    } else {
+      setEditingProject(null)
+    }
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
+    setEditingProject(null)
   }
 
   const handleSaveProject = (projectData: NewProjectData) => {
-    const newProject: Project = {
-      id: Date.now().toString(),
-      ...projectData
+    if (editingProject) {
+      // Update existing project
+      setProjects(projects.map(project => 
+        project.id === editingProject.id 
+          ? { ...project, ...projectData } 
+          : project
+      ))
+    } else {
+      // Create new project
+      const newProject: Project = {
+        id: Date.now().toString(),
+        ...projectData,
+        actions: [...projectData.actions, 'EDIT', 'DELETE']
+      }
+      
+      setProjects([...projects, newProject])
     }
-    
-    setProjects([...projects, newProject])
+  }
+
+  const handleDeleteProject = (id: string) => {
+    setProjects(projects.filter(project => project.id !== id))
   }
 
   return (
@@ -107,7 +129,7 @@ export default function Home() {
       <div className="projects-header flex justify-between items-center mb-6">
         <h2 className="projects-title text-xl font-semibold tracking-wider">PROJECTS</h2>
         <button 
-          onClick={handleOpenModal}
+          onClick={() => handleOpenModal()}
           className="new-project-btn bg-transparent text-white border border-[#444] rounded-full px-4 py-2 flex items-center text-sm hover:bg-[#2a2a2a] transition-all"
         >
           <span className="plus-icon mr-1">+</span>
@@ -119,12 +141,9 @@ export default function Home() {
         {projects.map(project => (
           <ProjectCard 
             key={project.id}
-            title={project.title}
-            description={project.description}
-            progress={project.progress}
-            progressColor={project.progressColor}
-            icon={<ProjectIcon type={project.iconType} />}
-            actions={project.actions}
+            project={project}
+            onEdit={() => handleOpenModal(project)}
+            onDelete={() => handleDeleteProject(project.id)}
           />
         ))}
       </div>
@@ -135,6 +154,7 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onSave={handleSaveProject}
+        editProject={editingProject}
       />
     </main>
   )
