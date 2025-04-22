@@ -93,23 +93,34 @@ export default function Home() {
 
   const handleSaveProject = (projectData: NewProjectData) => {
     if (editingProject) {
-      // Update existing project
+      const updatedActions = Array.from(new Set([
+        ...(projectData.actions || []),
+        'EDIT',
+        'DELETE',
+        // 編集対象がもともと持っていたOPEN, DETAILSなどを保持
+        ...(editingProject.actions.includes('OPEN') ? ['OPEN'] : []),
+        ...(editingProject.actions.includes('DETAILS') ? ['DETAILS'] : [])
+      ]))
+  
       setProjects(projects.map(project => 
         project.id === editingProject.id 
-          ? { ...project, ...projectData } 
+          ? { ...project, ...projectData, actions: updatedActions }
           : project
       ))
     } else {
-      // Create new project
       const newProject: Project = {
         id: Date.now().toString(),
         ...projectData,
-        actions: [...projectData.actions, 'EDIT', 'DELETE']
+        actions: Array.from(new Set([
+          ...(projectData.actions || []),
+          'EDIT',
+          'DELETE'
+        ]))
       }
-      
+  
       setProjects([...projects, newProject])
     }
-  }
+  }  
 
   const handleDeleteProject = (id: string) => {
     setProjects(projects.filter(project => project.id !== id))
