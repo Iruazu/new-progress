@@ -1,22 +1,16 @@
 'use client'
 
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { X, Plus, File, FileText, Image, Table } from 'lucide-react'
 import { TodoList } from './TodoList'
 import { Project } from '@/app/page'
 import { ProjectIcon } from './ProjectIcons'
+import { RichNote, NoteItem } from './RichNote'
 
 interface ProjectDetailPageProps {
   project: Project
   onClose: () => void
   initialTab: 'todo' | 'notes' | 'files' | null
-}
-
-interface NoteItem {
-  id: number
-  title: string
-  content: string
-  date: string
 }
 
 interface FileItem {
@@ -36,23 +30,23 @@ export function ProjectDetailPage({
   const [activeTab, setActiveTab] = useState<'todo' | 'notes' | 'files' | null>(initialTab)
   const icon = <ProjectIcon type={iconType} />
   
-  // Note state and handlers
+  // Rich Note state
   const [notes, setNotes] = useState<NoteItem[]>([
     {
       id: 1,
       title: 'Lighting Research',
-      content: 'Consider both natural and artificial lighting options for the space. Research energy-efficient solutions.',
-      date: '2025-04-10'
+      content: '# Lighting Options\n\n**Natural lighting** considerations:\n- Window placement\n- Skylights\n- Light wells\n\n**Artificial lighting** options:\n- LED fixtures\n- Smart lighting systems\n- Energy-efficient solutions',
+      date: '2025-04-10',
+      tags: ['lighting', 'research']
     },
     {
       id: 2,
       title: 'Material Selection',
-      content: 'Focus on sustainable and eco-friendly materials that align with project goals.',
-      date: '2025-04-15'
+      content: '# Sustainable Materials\n\nFocus on *eco-friendly* materials that align with project goals:\n\n- Recycled content\n- Renewable resources\n- Low VOC emissions\n\n[ ] Research bamboo flooring\n[x] Contact sustainable suppliers\n[ ] Compare cost efficiency',
+      date: '2025-04-15',
+      tags: ['materials', 'sustainability']
     }
   ])
-  const [showNoteModal, setShowNoteModal] = useState(false)
-  const [noteForm, setNoteForm] = useState({ title: '', content: '' })
   
   // File state and handlers
   const [files, setFiles] = useState<FileItem[]>([
@@ -81,22 +75,27 @@ export function ProjectDetailPage({
   const [showFileModal, setShowFileModal] = useState(false)
   const [fileForm, setFileForm] = useState({ name: '', type: 'Document', size: '' })
   
-  const handleNoteChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setNoteForm({ ...noteForm, [name]: value })
-  }
-  
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAddNote = (note: Omit<NoteItem, 'id' | 'date'>) => {
     const newNote: NoteItem = {
       id: Date.now(),
-      title: noteForm.title,
-      content: noteForm.content,
+      title: note.title,
+      content: note.content,
+      tags: note.tags || [],
       date: new Date().toISOString().split('T')[0]
     }
     setNotes([...notes, newNote])
-    setNoteForm({ title: '', content: '' })
-    setShowNoteModal(false)
+  }
+  
+  const handleDeleteNote = (id: number) => {
+    setNotes(notes.filter(note => note.id !== id))
+  }
+  
+  const handleUpdateNote = (id: number, updatedNote: Partial<NoteItem>) => {
+    setNotes(notes.map(note => 
+      note.id === id 
+        ? { ...note, ...updatedNote }
+        : note
+    ))
   }
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -116,10 +115,6 @@ export function ProjectDetailPage({
     setFiles([...files, newFile])
     setFileForm({ name: '', type: 'Document', size: '' })
     setShowFileModal(false)
-  }
-  
-  const handleDeleteNote = (id: number) => {
-    setNotes(notes.filter(note => note.id !== id))
   }
   
   const handleDeleteFile = (id: number) => {
@@ -276,106 +271,23 @@ export function ProjectDetailPage({
           )}
           
           {activeTab === 'notes' && (
-            <div className="notes-content">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">Notes</h3>
-                <button 
-                  onClick={() => setShowNoteModal(true)}
-                  className="bg-transparent text-white border border-[#444] rounded-full px-4 py-2 flex items-center text-sm hover:bg-[#2a2a2a] transition-all"
-                >
-                  <Plus size={16} className="mr-1" />
-                  Add Note
-                </button>
-              </div>
-              
-              {notes.length === 0 ? (
-                <div className="text-center py-8 text-[#999]">
-                  No notes yet. Add your first note to get started.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {notes.map(note => (
-                    <div key={note.id} className="bg-[#252525] p-5 rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium">{note.title}</h4>
-                        <button 
-                          onClick={() => handleDeleteNote(note.id)}
-                          className="text-[#999] hover:text-red-400"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      <p className="text-[#999] text-sm whitespace-pre-wrap mb-3">{note.content}</p>
-                      <div className="text-xs text-[#777]">{note.date}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Add Note Modal */}
-              {showNoteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-[#252525] rounded-lg w-full max-w-md p-6 relative">
-                    <button 
-                      onClick={() => setShowNoteModal(false)}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-white"
-                    >
-                      <X size={20} />
-                    </button>
-                    
-                    <h2 className="text-xl font-semibold mb-4">Add New Note</h2>
-                    
-                    <form onSubmit={handleAddNote}>
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Title
-                        </label>
-                        <input
-                          type="text"
-                          name="title"
-                          value={noteForm.title}
-                          onChange={handleNoteChange}
-                          className="w-full p-2 bg-[#2c2c2c] border border-[#444] rounded-md text-white"
-                          placeholder="Note Title"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-300 mb-1">
-                          Content
-                        </label>
-                        <textarea
-                          name="content"
-                          value={noteForm.content}
-                          onChange={handleNoteChange}
-                          className="w-full p-2 bg-[#2c2c2c] border border-[#444] rounded-md text-white h-32"
-                          placeholder="Write your note here..."
-                          required
-                        />
-                      </div>
-                      
-                      <div className="flex justify-end space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => setShowNoteModal(false)}
-                          className="px-4 py-2 bg-transparent border border-[#444] text-white rounded-md hover:bg-[#2a2a2a]"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-[#f8a387] text-[#1a1a1a] font-medium rounded-md hover:opacity-90"
-                        >
-                          Save Note
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+  <div className="notes-content">
+    {/* RichNote 内に Add Note ボタン含まれているのでここは空でOK */}
+    <div className="flex justify-between items-center mb-6">
+      <h3 className="text-lg font-semibold">Notes</h3>
+      <div className="h-8">{/* ←このままでOK */}</div>
+    </div>
+
+    {/* ←ここを常に表示するようにする */}
+    <RichNote 
+      notes={notes}
+      onAddNote={handleAddNote}
+      onDeleteNote={handleDeleteNote}
+      onUpdateNote={handleUpdateNote}
+    />
+  </div>
+)}
+
           
           {activeTab === 'files' && (
             <div className="files-content">
